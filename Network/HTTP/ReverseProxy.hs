@@ -28,6 +28,7 @@ module Network.HTTP.ReverseProxy
     , wpsGetDest
     , wpsLogRequest
     , wpsModifyResponseHeaders
+    , wpsRedirectCounts
     , SetIpHeader (..)
       -- *** Local settings
     , LocalWaiProxySettings
@@ -280,6 +281,7 @@ data WaiProxySettings = WaiProxySettings
     -- Default: no op
     --
     -- @since 0.6.1.0
+    , wpsRedirectCounts :: Int
     }
 
 -- | How to set the X-Real-IP request header.
@@ -303,6 +305,7 @@ defaultWaiProxySettings = WaiProxySettings
         , wpsGetDest = Nothing
         , wpsLogRequest = const (pure ())
         , wpsModifyResponseHeaders = \_ _ -> id
+        , wpsRedirectCounts = 1
         }
 
 renderHeaders :: WAI.Request -> HT.RequestHeaders -> Builder
@@ -421,7 +424,7 @@ waiProxyToSettings getDest wps' manager req0 sendResponse = do
                     , HC.queryString = WAI.rawQueryString req
                     , HC.requestHeaders = fixReqHeaders wps req
                     , HC.requestBody = body
-                    , HC.redirectCount = 0
+                    , HC.redirectCount = wpsRedirectCounts wps
                     }
             bracket
                 (try $ do
